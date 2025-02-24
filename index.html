@@ -2,76 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Weather App</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-   
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
-    
-    <div class="container mt-5">
+   
+    <div class="container">
+        <div class="mt-3">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8 col-lg-6 p-1">
+                    <div class="card h-100 rounded-5 bg-light text-center w-100 px-4" id="CurrentWeather" aria-label="Current Weather and Location">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-0">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8 col-lg-6 p-1">
+                    <div class="card h-100 rounded-5 bg-light text-center w-100 px-4 overflow-x-auto" id="HourlyForecast" aria-label="Twelve Hour Forecast">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row justify-content-center">
-            <div class="p-1 col-12 col-md-8">
-                <div class="card h-100 rounded-5 bg-light text-center" id="CurrentWeather" aria-label="Current Weather">
-                    <!-- html is in the script -->
+            <div class="p-1 col-6 col-md-4 col-lg-3">
+                <div class="card h-100 rounded-5 bg-light">
+                    <div class="card-body d-flex flex-column text-center" id="SunRiseSet" aria-label="Sunrise and Sunset">
+                        <!-- html in the script -->
+                    </div>
+                </div>
+            </div>
+            <!-- Humidity card -->
+            <div class="p-1 col-6 col-md-4 col-lg-3">
+                <div class="card h-100 rounded-5 bg-light">
+                    <div class="card-body d-flex flex-column text-center" id="uvIndex" aria-label="U-V index">
+                        <!-- html in the script -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-0">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8 col-lg-6 p-1">
+                    <div class="card h-100 rounded-5 bg-light text-center w-100 px-4 overflow-x-auto" id="WeeklyForecast" aria-label="weekly Forecast 6 days">
+                        <!-- Filled dynamically -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="container mt-2">
-        <div class="row justify-content-center">
-            <div class="p-1 col-12 col-md-8">
-                <div class="card h-100 rounded-5 bg-light text-center" id="HourlyForecast" aria-label="Hourly Forecast">
-                    <!-- html is in the script -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    
-
     
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-    const apiBase = "https://api.open-meteo.com/v1/forecast";
 
-    async function getCityName(latitude, longitude) {
-        const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
-        try {
-            const apiResponse = await fetch(apiUrl);
-            const apiData = await apiResponse.json();
-            return apiData.address.city || "Unknown Location";
-        } catch (error) {
-            console.error("Error fetching location:", error);
-            Swal.fire("Unable to fetch location. Please enable location services.");
-            return "Unknown Location";
-        }
-    }
-
-    async function getWeather(latitude, longitude) {
-        const userLocation = document.getElementById("CurrentWeather");
-
-        const strCity = await getCityName(latitude, longitude);
-        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,precipitation&hourly=temperature_2m,precipitation&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America%2FChicago`;
-
-        try {
-            const apiResponse = await fetch(apiUrl);
-            const apiData = await apiResponse.json();
-
-            if (apiResponse && apiData.current) {
-                userLocation.innerHTML = `
-                    <h1 class="text-dark p-3"><i class="bi bi-geo-alt-fill me-1"></i>${strCity}</h1>
-                `;
-            }
-        } catch (error) {
-            console.error("Error fetching weather data:", error);
-        }
-    }
 
     function getUserLocationData() {
         if (navigator.geolocation) {
@@ -82,14 +75,202 @@
                     getWeather(latitude, longitude);
                 },
                 (error) => {
-                    console.error("Error getting location:", error);
-                    Swal.fire("Unable to fetch location. Please enable location services.");
+                    console.error("Geolocation error:", error);
+                    let errorMessage = "Unable to fetch location. Please enable location services.";
+                    
+                    //switch statement that is used to handle the instance where the user has location permissions off
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = "Location access denied. Please allow location permissions.";
+                            break;
+                    }
+                    
+                    Swal.fire(errorMessage);
                 }
             );
         } else {
             Swal.fire("Geolocation is not supported by your browser.");
         }
+        }
+
+        async function getCityName(latitude, longitude) {
+            const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
+            
+            try {
+                const apiResponse = await fetch(apiUrl);
+                const apiData = await apiResponse.json();
+
+                if (apiData.address) {
+                    return (
+                        apiData.address.city ||
+                        apiData.address.village ||
+                        apiData.address.county ||
+                        "Unknown Location"
+                    );
+                } else {
+                    return "Unknown Location";
+                }
+            } catch (error) {
+                console.error("Error fetching location:", error);
+                Swal.fire("Error retrieving city name. Please try again.");
+                return "Unknown Location";
+            }
+        }   
+
+
+    async function getWeather(latitude, longitude) {
+        const userLocation = document.getElementById("CurrentWeather");
+        const userSunRiseSet = document.getElementById("SunRiseSet");
+        const userUvIndex = document.getElementById("uvIndex");
+
+        const strCity = await getCityName(latitude, longitude);
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m&hourly=temperature_2m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America%2FChicago`;
+
+        try {
+
+            //fetching data fromt the weather api
+            const apiResponse = await fetch(apiUrl);
+            const apiData = await apiResponse.json();
+
+            //getting temperature data from the api
+            const intCurrentTemp = apiData.current.temperature_2m;
+            const intMaxTemp = apiData.daily.temperature_2m_max;
+            const intMinTemp = apiData.daily.temperature_2m_min;
+
+
+            //Sunrise and Sunset data and conversiosn
+            const intSunrise = apiData.daily.sunrise[0]; // Get the first (and only) sunrise time
+            const sunriseDate = new Date(intSunrise);  // Convert sunrise time (ISO format) to a Date object
+            const formattedSunrise = sunriseDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });  // Format it to display as HH:mm AM/PM
+
+            const intSunset =  apiData.daily.sunset[0]
+            const sunsetDate = new Date(intSunset);
+            const formattedSunset = sunsetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+            //UV Index data
+            const intUvIndex = apiData.daily.uv_index_max[0];
+           
+            
+
+           
+            //html used for the top section of the page (location and current temperature)
+            userLocation.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center text-dark p-2">
+                <h1 class="mb-0 me-5 text-center"><i class="bi bi-geo-alt-fill me-1"></i>${strCity} ${intCurrentTemp}°F</h1>
+                </div>
+            `
+
+           
+            //html Used for the hourly forecast section of the page (will be a 12 hour period)
+            await getTwelveHrForecast(latitude, longitude);
+            await getWeeklyForecast(latitude, longitude);
+
+
+            userSunRiseSet.innerHTML = `
+                <div class="d-flex flex-column align-items-center me-2 p-1 ">
+                    <h3 class="fw-bold">Sunrise</h3>
+                    <h4 class="text-primary">${formattedSunrise} <i class="bi bi-sunrise-fill"></i></h4>
+                    <h3 class="fw-bold">Sunset</h3>
+                    <h4 class="text-primary">${formattedSunset} <i class="bi bi-sunset-fill"></i></h4>
+                </div>
+            `
+            userUvIndex.innerHTML = `
+                <div class="d-flex flex-column align-items-center me-2 p-1 ">
+                    <h3 class="fw-bold">UV Index</h3>
+                    <h4 class="text-primary">${intUvIndex} </h4>
+                    <img src="https://www.iconpacks.net/icons/2/free-sun-icon-3337-thumb.png" alt="image of the sun" aria-label="sun image" style="width: 50px; height: 50px;">
+                </div>
+            `
+
+            
+            
+        } catch (error) {
+            console.error("Error fetching weather data:", error)
+        }
     }
+
+    async function getTwelveHrForecast(latitude, longitude) {
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m&hourly=temperature_2m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America%2FChicago`;
+        const hourlyWeather = document.getElementById('HourlyForecast')
+        try{
+
+        //fetching data fromt the weather api
+        const apiResponse = await fetch(apiUrl);
+        const apiData = await apiResponse.json();
+        //getting time and weather data for the hourly forecast section
+        const arrHourlyTime = apiData.hourly.time // pulls the time-stamps that will corelate to the individual temperature data indexes in the next array
+        const arrHourlyTemps = apiData.hourly.temperature_2m // pulls the hourly temperature data for the current day and alligns with the time stamps in the arrHourlyTime array
+        const arrHourlyPercipitation = apiData.hourly.precipitation_probability // pulls percipitation percentage from the api and alligns with the time stamps in the arrHourlyTime array
+
+        const strDate = new Date(); // pulls the current time from the user using javasctirpt date function
+        const intCurrentHour =  strDate.getHours()// the toISOString funcntion converts the strDate data to a string that is then split at the "T" which is the Time portion of the data and then the substring function is used to pull the first two characters of the time string which is the current hour
+
+        let startTime = arrHourlyTime.findIndex(time => time.includes(`T${intCurrentHour}:00`))
+        const arrTwelveHours = arrHourlyTime.slice(startTime+1, startTime + 12) // creates an array with the 12 hours we are needing to display starting with the current hour
+        let hourlyHTML = '<h1>12 Hour Forecast</h1><div class="d-flex flex-row overflow-x-auto text-dark p-2">' //creates the start of the html that the following loop will append to in order to create the hourly forecast section of the page
+        arrTwelveHours.forEach((hour, index) => {
+            hourlyHTML += `
+                <div class="d-flex flex-column align-items-center me-2 p-1 border rounded bg-white shadow-sm">
+                    <h5 class="fw-bold">${hour.substring(11, 16)}</h5>
+                    <h4 class="text-primary">${arrHourlyTemps[index]}°F</h4>
+                    <p class="text-muted">${arrHourlyPercipitation[index]}% <i class="bi bi-cloud-drizzle-fill"></i></p>
+                </div>
+            `
+        })
+        hourlyHTML += '</div>'
+        hourlyWeather.innerHTML = hourlyHTML;
+
+
+        }catch (error) {
+            console.error("Error fetching hourly weather data:", error)
+        }
+        
+    }   
+    
+    async function getWeeklyForecast(latitude, longitude) {
+    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America%2FChicago`;
+
+    const weeklyWeather = document.getElementById('WeeklyForecast'); // Assuming you have a div with this ID
+
+    try {
+        // Fetch weather data
+        const apiResponse = await fetch(apiUrl);
+        const apiData = await apiResponse.json();
+
+        // Extract daily forecast data
+        const arrDailyDates = apiData.daily.time.slice(1); // **Skip the first (yesterday's) entry**
+        const arrMaxTemps = apiData.daily.temperature_2m_max.slice(1);
+        const arrMinTemps = apiData.daily.temperature_2m_min.slice(1);
+        const arrPrecipitation = apiData.daily.precipitation_probability_max.slice(1);
+
+        // Generate HTML for the 7-day forecast
+        let weeklyHTML = '<h1>Weekly Forecast</h1><div class="d-flex flex-row overflow-auto text-dark p-2">';
+        
+        arrDailyDates.forEach((date, index) => {
+            // Format date (e.g., "2025-02-24" → "Mon, Feb 24")
+            const options = { weekday: 'short', month: 'short', day: 'numeric' };
+            const formattedDate = new Date(date).toLocaleDateString('en-US', options);
+
+            weeklyHTML += `
+                <div class="d-flex flex-column align-items-center me-2 p-2 border rounded bg-white shadow-sm">
+                    <h5 class="fw-bold">${formattedDate}</h5>
+                    <h4 class="text-primary" style="font-size:15px;">${arrMaxTemps[index]} / ${arrMinTemps[index]}</h4>
+                    <p class="text-muted">${arrPrecipitation[index]}% <i class="bi bi-cloud-drizzle-fill"></i></p>
+                </div>
+            `;
+        });
+
+        weeklyHTML += '</div>';
+        weeklyWeather.innerHTML = weeklyHTML;
+
+    } catch (error) {
+        console.error("Error fetching weekly weather data:", error);
+    }
+}
+
+
+
+
 
     getUserLocationData();
 });
